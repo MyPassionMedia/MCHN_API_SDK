@@ -21,18 +21,18 @@ Jump To:
 
 11/23/2020 Currently Composer is not enabled.
 
-Alternatively, a good method for installing the SDK by including the includes.php file located in the src directory. 
+Alternatively, another method for installing the SDK by including the includes.php file located in the src directory. 
 
-For example, after cloning the SDK repository the following code will include the SDK.
+For instance, after cloning the SDK repository, use the following code will include the SDK.
 
 ```php
 <?php
-    $srcDir = "/var/www/html/sdk.mchn.io/public_html/src";
+    $srcDir = "/MCHN_API_SDK";
     require_once $srcDir . "/" . "includes.php";
 
 ```
 
-If using composer, the code will look like the following.
+If using composer, run the following command to install the SDK
 
 ```
 composer require mchn/mchn-sdk-php
@@ -60,8 +60,9 @@ For instance, in the following code snippet, we pass the *limit* and *offset* pa
 
 ```php
 <?php
-// Require the Composer autoloader.
-require "vendor/autoload.php";
+// Require the SDK manually.
+$srcDir = "./MCHN_API_SDK";
+require_once $srcDir . "/" . "includes.php";
 
 use MCHN\Commerce\CommerceClient;
 
@@ -92,7 +93,7 @@ $orderInfo = $testCommerceClient->getOrder(14);
 
 ```
 
-### Get all prices from  product #13
+### Get all prices from product #13
 
 ```php
 <?php

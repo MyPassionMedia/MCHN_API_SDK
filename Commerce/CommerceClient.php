@@ -183,7 +183,7 @@ class CommerceClient
 			&& in_array($options['type'],$this->supportedCommerceTypes)
 		){
 			$buildOptions['type'] = $options['type'];
-			$requestURI .= $supportedTypeEndpoints[$buildOptions['type']];
+			$requestURI .= $this->supportedTypeEndpoints[$buildOptions['type']];
 		} else {
 			// throw error
 			$this->addError(array(
@@ -1167,20 +1167,14 @@ class CommerceClient
 
 		$getOptions['data']['requestURI'] = $requestURI;
 
-		// We are using a 
+		// We are providing a GET request
 		$getOptions['requestType'] = "GET";
 		// Execute request 
-		// if(empty($this->errors)){
-			if(empty($options['async'])){
-				$this->api->execute($getOptions);
-			} else{
-				$this->api->executeAsync($getOptions);
-			}    
-		// }
-		//  else {
-		// 	$this->api->errors = $this->getErrors();
-		// }
-
+		if(empty($options['async'])){
+			$this->api->execute($getOptions);
+		} else{
+			$this->api->executeAsync($getOptions);
+		}    
 		// Return response data, if DNE it returns NULL.
 		return $this->api;
 	}

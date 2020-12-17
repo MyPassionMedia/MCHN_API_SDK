@@ -3,7 +3,6 @@
 namespace MCHN\API;
 
 use \MCHN\PHPHash;
-use \MCHN\APIKey;
 
 /**
  * API Provider
@@ -323,26 +322,12 @@ class ApiProvider
             "requestURI" => str_replace(' ', '%20', $options['data']['requestURI'])
         ));
 
-
-        // echo ("Request type");
-        // var_dump($requestType);
-
-        // $curlURL = urlencode($curlURL);
-
-        // var_dump($curlURL);
-
         // Fix white spaces issue with curl.
         $curlURL = str_replace ( ' ', '%20', $curlURL);
 
-    
         // Set the endpoint based on the request being executed 
         $this->endpoint = $curlURL;
 
-        // $curlURL = "https://api.mchn.io/v1/orders?sinceDate=2020-10-30 11:09:42";
-
-
-        // var_dump($curlURL);
-        // echo ($curlURL . " URL Is ");
         curl_setopt_array($curl, array(
         // Make sure requestURI has version
         CURLOPT_URL => $curlURL,
@@ -369,22 +354,8 @@ class ApiProvider
 
         curl_close($curl);
 
-        // echo ("\nResponse\n");
-        // var_dump($response);
-
-
-
-        // echo ("JSON is ");
-        // var_dump($response);
-        // echo ("URL: " . $curlURL . "\n" );
-        // var_dump($curlURL);
-
-        // var_dump($response);
-
         $response = json_decode($response, true);
-        // echo ("\nResponse from API request for URL \n" . $curlURL ."\n ");
 
-        // var_dump($response);
         $invalidResponse = false;
 
         switch(json_last_error()) {
@@ -417,13 +388,6 @@ class ApiProvider
                     }
                 }
 
-                // Reverse pagination commented out until data comes out consistently
-                // if(!empty($response['metadata']['pagination']['previousPage'])){
-                //     $this->previousPage = $response['metadata']['pagination']['previousPage'];
-                // } else {
-                //     $this->previousPage = false;
-                // }
-
                 $this->responseData = $response;
 
                 return $response;
@@ -442,7 +406,7 @@ class ApiProvider
 
 
     /**
-    * Use GuzzleHTTP to get a async response for the API request
+    * TODO: Use GuzzleHTTP to get a async response for the API request
     * look into payment processing method
     */
     public function executeAsync($options){
