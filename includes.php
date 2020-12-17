@@ -11,7 +11,6 @@
 
     require_once $currentDirectory . "/API/ApiProvider.php";
 
-    require_once $currentDirectory . "/API/APIKey.class.php";
 
 
     // Clients
