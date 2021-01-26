@@ -52,10 +52,11 @@ class CommerceClient
 	private $requestMethod;
 	
 	/** @var array Array holding currently supported Commerce Endpoints */
-	private $supportedCommerceTypes = ['order', 'orderPayment', 'orderStatus', 'inventory' ,'shipment', 'price', 'product', 'payment', 'shippingPrice', 'productCategory', 'articleCategory'];
+	private $supportedCommerceTypes = ['article' ,'order', 'orderPayment', 'orderStatus', 'inventory' ,'shipment', 'price', 'product', 'payment', 'shippingPrice', 'productCategory', 'articleCategory'];
 	
 	/** @var array Array holding currently supported Commerce Endpoints mapped to types */
 	private $supportedTypeEndpoints = array(
+		'article' => "articles",
 		'articleCategory' => 'articleCategories',
 		'order' => 'orders',
 		'orderPayment' => 'orderPayments',
@@ -67,7 +68,6 @@ class CommerceClient
 		'payment' => 'payments',
 		'productCategory' => 'productCategories',
 		'shippingPrice' => 'shippingPrices'
-	
 	);
 
 	/** @var array Array holding all Errors associated with Commerce Client */
@@ -114,6 +114,36 @@ class CommerceClient
 	}
 
 	/**
+	* 
+	* This function will create a inventory in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $cost The cost for the inventory
+	*		@type int $productID The productID for the inventory 
+	*		@type int $costCurrencyCountryCode The 2 digit country code of the inventory e.g. "CA"
+	*		@type int $statusID The status ID for the inventory 
+	*		@type int $type The type of shipment
+	*		@type int $inventoryAdded The number of products added
+	*		@type string $dateReceived The date the shipment was received 
+	*		@type string $dateOrdered The date the shipment was ordered 
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildInventory($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'inventory'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+
+	/**
 	*
 	* This function will create a order in the MCHN via the passed parameters
 	*
@@ -124,9 +154,11 @@ class CommerceClient
 	*		@type int $accountID The accountID associated with the order
 	*		@type int $currencyCountryCode The 2 digit country code of the order e.g. "CA"
 	*		@type int $cartID The cart ID for the order if applicable
+	*		@type int $shippingPrice The price for shipping the product in its currency country
 	*		@type string $purchaseURL The URL of the product's purchase
 	*		@type bool $isCompleted Whether the order completed successfully
 	*		@type bool $async Bool to make request asynchronous
+	*		@type enum $type The type of order ['Sales Form', 'Add-on', 'Upsell', 'Shopping Cart', 'Suborder', 'Subscription Fulfillment']
 	* }
 	*
 	* @return array POST response from API
@@ -168,7 +200,7 @@ class CommerceClient
 			!empty($options['data'])
 			&& is_array($options['data'])
 		){
-			$buildOptions = $options['data'];
+			$buildOptions['input'] = $options['data'];
 		} else{
 			// throw error
 			$this->addError(array(
@@ -199,20 +231,186 @@ class CommerceClient
 
 		// We are using a 
 		$buildOptions['requestType'] = "POST";
+
 		// Execute request 
-		if(empty($this->errors)){
-			if(empty($options['async'])){
-				$this->api->execute($buildOptions);
-			} else{
-				$this->api->executeAsync($buildOptions);
-			}    
-		} else {
-			return $this->getErrors();
-		}
+		if(empty($options['async'])){
+			$this->api->execute($buildOptions);
+		} else{
+			$this->api->executeAsync($buildOptions);
+		}    
 
 		// Return response data, if DNE it returns NULL.
 		return $this->api;
 	}
+
+	/**
+	* 
+	* This function will create a price in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type string $currencyCountryCode The 2 digit country code for the price's country
+	*		@type int $productID The productID for the price 
+	*		@type int $peggedCurrencyCountryCode The 2 digit country code of the price that it is pegged too e.g. "CA"
+	*		@type int $type The type of price i.e. 1 regular price, 2 sale price 
+	*		@type string $dateEnd The date the price will end and not be in effect
+	*		@type string $dateStart The date the price will start to take in effect
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildPrice($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'price'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	* 
+	* This function will create a shipping price in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type string $currencyCountryCode The 2 digit country code for the shipping price's country
+	*		@type int $productID The productID for the shipping price 
+	*		@type int $destinationCountryCode The 2 digit country code of where the product is going 
+	*		@type string $dateEnd The date the shipping price will end and not be in effect
+	*		@type string $dateStart The date the shipping price will start to take in effect
+	*		@type double $shippingPrice The shipping price of the product in the country code
+	*		@type int $defaultAmount the default charged if no shipping price for the country
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildShippingPrice($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'shippingPrice'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	* 
+	* This function will delete a price in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type string $currencyCountryCode The 2 digit country code for the price's country
+	* }
+	*
+	* @return array DELETE response from API
+	*
+	*/
+	public function deletePrice($options){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$deleteOptions = array(
+			"data" => $options,
+			"type" => 'price'
+		);
+
+		return $this->removeObject($deleteOptions);
+	}
+
+	/**
+	* 
+	* This function will delete a shipping price in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type string $currencyCountryCode The 2 digit country code for the shipping price's country
+	* }
+	*
+	* @return array DELETE response from API
+	*
+	*/
+	public function deleteShippingPrice($options){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$deleteOptions = array(
+			"data" => $options,
+			"type" => 'shippingPrice'
+		);
+
+		return $this->removeObject($deleteOptions);
+	}
+
+	/**
+	*
+	* This function will grab a article  from the MCHN based on the ID provided
+	*
+	* @param array $options {
+	*
+	*		@type int $ID The ID of the article  to get 
+	* }
+	*
+	* @return array response from API Provider
+	*
+	*/
+	public function getArticle($options){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$options['type'] = 'article';
+
+		return $this->getObject($options);
+	}
+
+	/**
+	*
+	* This function will grab articles from the MCHN depending on the passed options 
+	*
+	* @param array $options {
+	*
+	*		@type int $limit The number of records to return 
+	*		@type int $offset Where to get records from with offset pagination
+	* }
+	*
+	* @return array response from API Provider
+	*
+	*/
+
+	public function getArticles($options = []){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$options['type'] = 'articles';
+
+		return $this->getObjects($options);
+	}
+
+
 	/**
 	*
 	* This function will grab a article category from the MCHN based on the ID provided
@@ -346,7 +544,7 @@ class CommerceClient
 
 	/**
 	*
-	* This function will grab inventories from the MCHN depending on the passed options 
+	* This function will grab inventory records from the MCHN depending on the passed options 
 	*
 	* @param array $options {
 	*
@@ -1127,6 +1325,10 @@ class CommerceClient
 
 		// Append appropriate request URI based on type.
 		switch($options['type']){
+
+			case "article":
+				$requestURI .= "articles";
+				break;
 			case "articleCategory":
 				$requestURI .= "articleCategories";
 				break; 
@@ -1406,6 +1608,70 @@ class CommerceClient
 	public function getSharedKey(){
 		return $this->sharedKey;
 	}
+
+	/**
+	*
+	* This function will remove a object in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $ID An ID indicating the object to remove
+	*		@type string $type Name of the object to build e.g. order
+	*		@type bool $async Switch to make request asynchronous
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	private function removeObject($options){
+		
+		// Data to build the object
+		$buildOptions = array();
+
+		// Build API request information
+		$requestURI = "";
+		if(empty($options['data']['id'])){
+			$this->addError(array(
+				"code" => "400",
+				"field" => "ID",
+				"errorDescription" => "Missing or Invalid 'ID' in commerceClient::removeObject().",
+			));
+
+		}
+
+		if(
+			!empty($options['type'])
+			&& in_array($options['type'],$this->supportedCommerceTypes)
+		){
+			$buildOptions['type'] = $options['type'];
+			$requestURI .= $this->supportedTypeEndpoints[$buildOptions['type']];
+		} else {
+			// throw error
+			$this->addError(array(
+				"code" => "400",
+				"field" => "type",
+				"errorDescription" => "Missing or Invalid 'type' in commerceClient::removeObject().",
+			));
+		}
+
+		$requestURI .= "/";
+
+		$buildOptions['data']['requestURI'] = $requestURI . $options['data']['id'];
+
+		// We are using a 
+		$buildOptions['requestType'] = "DELETE";
+
+		// Execute request 
+		if(empty($options['async'])){
+			$this->api->execute($buildOptions);
+		} else{
+			$this->api->executeAsync($buildOptions);
+		}    
+
+		// Return response data, if DNE it returns NULL.
+		return $this->api;
+	}
+
 }
 ?>
 

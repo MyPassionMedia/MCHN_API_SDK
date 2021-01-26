@@ -328,22 +328,54 @@ class ApiProvider
         // Set the endpoint based on the request being executed 
         $this->endpoint = $curlURL;
 
-        curl_setopt_array($curl, array(
-        // Make sure requestURI has version
-        CURLOPT_URL => $curlURL,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 20,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => $requestType,
-        CURLOPT_HTTPHEADER => array(
-            "Cookie: PHPSESSID=c7bpjshgpp3oaaurpekqiitr83",
-            "x-api-key: " . $this->sharedKey,
-            "hash: " . $requestHash
-        ),
-        ));
+        // var_dump($curlURL);
+
+        // var_dump($requestType);
+
+        // var_dump($options['data']);
+
+        $curlOptions = array(
+            CURLOPT_URL => $curlURL,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 20,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => $requestType,
+            CURLOPT_HTTPHEADER => array(
+                "Cookie: PHPSESSID=c7bpjshgpp3oaaurpekqiitr83",
+                "x-api-key: " . $this->sharedKey,
+                "hash: " . $requestHash
+            ),
+        );
+
+        if(!empty($options['input'])){
+            // $postOption = [  CURLOPT_POSTFIELDS => json_encode($options['data'])];
+
+            $curlOptions[CURLOPT_POSTFIELDS] = json_encode($options['input']);
+            // array_push($curlOptions, $postOption);
+        }
+        
+        curl_setopt_array($curl, $curlOptions);
+        
+        // array(
+        // // Make sure requestURI has version
+        // CURLOPT_URL => $curlURL,
+        // CURLOPT_RETURNTRANSFER => true,
+        // CURLOPT_ENCODING => "",
+        // CURLOPT_MAXREDIRS => 20,
+        // CURLOPT_TIMEOUT => 0,
+        // CURLOPT_FOLLOWLOCATION => true,
+        // CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        // CURLOPT_CUSTOMREQUEST => $requestType,
+        // CURLOPT_HTTPHEADER => array(
+        //     "Cookie: PHPSESSID=c7bpjshgpp3oaaurpekqiitr83",
+        //     "x-api-key: " . $this->sharedKey,
+        //     "hash: " . $requestHash
+        // ),
+        // CURLOPT_POSTFIELDS => json_encode($options['data']),
+        // ));
 
         $response = curl_exec($curl);
         $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
@@ -353,6 +385,8 @@ class ApiProvider
         }
 
         curl_close($curl);
+
+        // print_r($response);
 
         $response = json_decode($response, true);
 
@@ -369,6 +403,8 @@ class ApiProvider
             break;
             case JSON_ERROR_SYNTAX:
                 echo 'API RESPONSE ERROR - Syntax error, malformed JSON on endpoint ' . $curlURL . "\n";
+               
+               var_dump($options['input']);
                 $invalidResponse = true;
             break;
             case JSON_ERROR_NONE:
