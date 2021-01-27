@@ -1,0 +1,12 @@
+{
+    "name": "mchn/mchn-sdk-php",
+    "description": "MCHN SDK for PHP: Easily use the MCHN API with your PHP project",
+    "license": "Apache",
+    "authors": [
+        {
+            "name": "Ammar Haq",
+            "email": "ammarhaq@outlook.com"
+        }
+    ],
+    "require": {}
+}
