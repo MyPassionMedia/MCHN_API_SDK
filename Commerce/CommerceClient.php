@@ -52,10 +52,11 @@ class CommerceClient
 	private $requestMethod;
 	
 	/** @var array Array holding currently supported Commerce Endpoints */
-	private $supportedCommerceTypes = ['article' ,'order', 'orderPayment', 'orderStatus', 'inventory' ,'shipment', 'price', 'product', 'payment', 'shippingPrice', 'productCategory', 'articleCategory'];
+	private $supportedCommerceTypes = ['account', 'article' ,'order', 'orderPayment', 'orderStatus', 'inventory' ,'shipment', 'price', 'product', 'payment', 'shippingPrice', 'productCategory', 'articleCategory'];
 	
 	/** @var array Array holding currently supported Commerce Endpoints mapped to types */
 	private $supportedTypeEndpoints = array(
+		'account' => "accounts",
 		'article' => "articles",
 		'articleCategory' => 'articleCategories',
 		'order' => 'orders',
@@ -115,33 +116,51 @@ class CommerceClient
 
 	/**
 	* 
-	* This function will create a inventory in the MCHN via the passed parameters
+	* This function will create a articleCategory record in the MCHN via the passed parameters
 	*
 	* @param array $options {
 	*
-	*		@type int $cost The cost for the inventory
-	*		@type int $productID The productID for the inventory 
-	*		@type int $costCurrencyCountryCode The 2 digit country code of the inventory e.g. "CA"
-	*		@type int $statusID The status ID for the inventory 
-	*		@type int $type The type of shipment
-	*		@type int $inventoryAdded The number of products added
-	*		@type string $dateReceived The date the shipment was received 
-	*		@type string $dateOrdered The date the shipment was ordered 
+	*		@type int $authorID The account ID for the author  
+	*		@type string $title The title or name for the article category 
+	*		@type string $url The unique URL for the article category
 	* }
 	*
 	* @return array POST response from API
 	*
 	*/
-	public function buildInventory($options){
+	public function buildArticleCategory($options){
 
 		$buildOptions = array(
 			"data" => $options,
-			"type" => 'inventory'
+			"type" => 'articleCategory'
 		);
 
 		return $this->buildObject($buildOptions);
 	}
 
+	/**
+	* 
+	* This function will create a productCategory record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $authorID The account ID for the author  
+	*		@type string $title The title or name for the article category 
+	*		@type string $url The unique URL for the article category
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildProductCategory($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'productCategory'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
 
 	/**
 	*
@@ -169,6 +188,32 @@ class CommerceClient
 		$buildOptions = array(
 			"data" => $options,
 			"type" => 'order'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	*
+	* This function will create a order status in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $statusID The status ID for the order status
+	*		@type int $orderID The orderID for the order status ID to be mapped too 
+	*		@type int $operatorID The accountID associated with creating the order status
+	*		@type string $dateEffective The date the order status is made effective, must not be in the past
+	*		@type string $changeReason The string change reason for an order status being changed
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildOrderStatus($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'orderStatus'
 		);
 
 		return $this->buildObject($buildOptions);
@@ -299,6 +344,93 @@ class CommerceClient
 	}
 
 	/**
+	*
+	* This function will create a shipment in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $statusID The status ID for the shipment
+	*		@type int $orderID The orderID for the shipment ID to be mapped too 
+	*		@type int $operatorID The accountID associated with creating the shipment
+	*		@type string $dateEffective The date the shipment is made effective, must not be in the past
+	*		@type string $changeReason The string change reason for an shipment being changed
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildShipment($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'shipment'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+
+	/**
+	* 
+	* This function will create a inventory record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $cost cost to make the inventory
+	*		@type string $costCurrencyCountryCode The the currenyc country code for the cost
+	*		@type string $dateOrdered  The date the inventory waas ordered
+	*		@type inventoryAdded  The quanity of inventory added
+	*		@type string $dateReceived  The date the inventory waas received
+	*		@type int $statusID The status ID of the inventory 1 => Received, 2 => Lost in transit, 3 => Returned
+	*		@type int $typeID of the inventory 1 => Shipment, 2 => Adjustment-
+	*		@type int $productID the ID of the product added
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildInventory($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'inventory'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	* 
+	* This function will create a payment record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $accountID Who made the payment? Enter their accountID
+	*		@type int $amount amount of the payment\
+	*		@type string $authorizationCode What was authorization code for this payment. Usually provided by the payment gateway
+	*		@type string $currencyCountryCode  What was the country code for which the payment was made in
+	*		@type string $date  When was the payment made e.g 2021-01-21 17:06:44
+	*		@type string $giftCardNumber The number of the giftCard used for the payment
+	*		@type int $paymentMethodID What type of payment? ( 1: Cash, 2: Credit Card, 3: Cheque, 4: PayPal, 5: Debit, 6: Complimentary, 7:External, 8: Account Credit, 9: Bad Debit, 10: Gift Card
+	*		@type int $paymentMethodType Provide more info on payment method type i.e. VI for Visa and MC for Mastercard if payment method ID 2
+	*		@type int  $status What is the status of the payment (1 : Successful 0 : Failed)
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+	public function buildPayment($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'payment'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+
+	/**
 	* 
 	* This function will delete a price in the MCHN via the passed parameters
 	*
@@ -358,6 +490,60 @@ class CommerceClient
 
 	/**
 	*
+	* This function will grab a account from the MCHN based on the ID provided
+	*
+	* @param array $options {
+	*
+	*		@type int $ID The ID of the account  to get 
+	* }
+	*
+	* @return array response from API Provider
+	*
+	*/
+	public function getAccount($options){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$options['type'] = 'account';
+
+		return $this->getObject($options);
+	}
+
+	/**
+	*
+	* This function will grab accounts from the MCHN depending on the passed options 
+	*
+	* @param array $options {
+	*
+	*		@type int $limit The number of records to return 
+	*		@type int $offset Where to get records from with offset pagination
+	* }
+	*
+	* @return array response from API Provider
+	*
+	*/
+
+	public function getAccounts($options = []){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$options['type'] = 'accounts';
+
+		return $this->getObjects($options);
+	}
+
+	/**
+	*
 	* This function will grab a article  from the MCHN based on the ID provided
 	*
 	* @param array $options {
@@ -381,6 +567,7 @@ class CommerceClient
 
 		return $this->getObject($options);
 	}
+
 
 	/**
 	*
