@@ -328,12 +328,6 @@ class ApiProvider
         // Set the endpoint based on the request being executed 
         $this->endpoint = $curlURL;
 
-        // var_dump($curlURL);
-
-        // var_dump($requestType);
-
-        // var_dump($options['data']);
-
         $curlOptions = array(
             CURLOPT_URL => $curlURL,
             CURLOPT_RETURNTRANSFER => true,
