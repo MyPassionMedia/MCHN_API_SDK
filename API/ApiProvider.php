@@ -322,10 +322,6 @@ class ApiProvider
             "requestURI" => str_replace(' ', '%20', $options['data']['requestURI'])
         ));
 
-        var_dump($requestHash);
-
-        exit();
-
         // Fix white spaces issue with curl.
         $curlURL = str_replace ( ' ', '%20', $curlURL);
 
