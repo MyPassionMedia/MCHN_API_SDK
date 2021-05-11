@@ -52,11 +52,12 @@ class CommerceClient
 	private $requestMethod;
 	
 	/** @var array Array holding currently supported Commerce Endpoints */
-	private $supportedCommerceTypes = ['account', 'article' ,'order', 'orderPayment', 'orderStatus', 'inventory' ,'shipment', 'price', 'product', 'payment', 'shippingPrice', 'productCategory', 'articleCategory'];
+	private $supportedCommerceTypes = ['account', 'address', 'article' ,'order', 'orderPayment', 'orderStatus', 'inventory' ,'shipment', 'price', 'product', 'payment', 'shippingPrice', 'productCategory', 'articleCategory'];
 	
 	/** @var array Array holding currently supported Commerce Endpoints mapped to types */
 	private $supportedTypeEndpoints = array(
 		'account' => "accounts",
+		'address' => 'addresses',
 		'article' => "articles",
 		'articleCategory' => 'articleCategories',
 		'order' => 'orders',
@@ -88,6 +89,7 @@ class CommerceClient
 	* @return self
 	*
 	*/
+
 	public function __construct($options){
 
 		// Build the api provider
@@ -113,6 +115,35 @@ class CommerceClient
 		$this->api = new ApiProvider($apiInformation);
 
 	}
+	
+	/**
+	* 
+	* This function will create a address record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $accountID The account ID this address is associated with
+	*		@type string $address The street address portion of this address 
+	*		@type string $city The city portion of the address
+	*		@type string $countryCode The 3166-1 country code of this address e.g. 'CA', 'US'
+	*		@type string $name The name portion of the address
+	*		@type string $postalCode The postalCode portion of this address
+	*		@type string $provinceCode The ISO 3166-2 province code of this address
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+
+	public function buildAddress($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'address'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
 
 	/**
 	* 
@@ -128,6 +159,7 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+
 	public function buildArticleCategory($options){
 
 		$buildOptions = array(
@@ -152,6 +184,7 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+
 	public function buildProductCategory($options){
 
 		$buildOptions = array(
@@ -183,6 +216,7 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+
 	public function buildOrder($options){
 
 		$buildOptions = array(
@@ -209,6 +243,7 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+
 	public function buildOrderStatus($options){
 
 		$buildOptions = array(
@@ -228,11 +263,13 @@ class CommerceClient
 	*		@type array $data An array holding the information to build the object with.
 	*		@type string $type Name of the object to build e.g. order
 	*		@type bool $async Switch to make request asynchronous
+	* 		@type integer $parentID The parent ID for the product
 	* }
 	*
 	* @return array POST response from API
 	*
 	*/
+
 	private function buildObject($options){
 		
 		// Data to build the object
@@ -240,7 +277,6 @@ class CommerceClient
 
 		// Build API request information
 		$requestURI = "";
-
 		if(
 			!empty($options['data'])
 			&& is_array($options['data'])
@@ -270,11 +306,26 @@ class CommerceClient
 			));
 		}
 
+		if(!empty($options['data']['parentID']) && !is_int($options['data']['parentID'])){
+			// throw error
+			$this->addError(array(
+				"code" => "400",
+				"field" => "type",
+				"errorDescription" => "Missing or Invalid 'parentID' in commerceClient::buildChildProduct().",
+			));
+		}
+
 		$requestURI .= "/";
 
-		$buildOptions['data']['requestURI'] = $requestURI;
 
-		// We are using a 
+		if(!empty($options['data']['parentID'])){
+			$requestURI .=  $options['data']['parentID'];
+			unset($options['data']['parentID']);
+		}
+
+		$buildOptions['data']['requestURI'] = $requestURI;
+		
+		// We are using a POST request to create objects via the commerce client
 		$buildOptions['requestType'] = "POST";
 
 		// Execute request 
@@ -333,6 +384,7 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+	
 	public function buildShippingPrice($options){
 
 		$buildOptions = array(
@@ -343,34 +395,7 @@ class CommerceClient
 		return $this->buildObject($buildOptions);
 	}
 
-	/**
-	*
-	* This function will create a shipment in the MCHN via the passed parameters
-	*
-	* @param array $options {
-	*
-	*		@type int $statusID The status ID for the shipment
-	*		@type int $orderID The orderID for the shipment ID to be mapped too 
-	*		@type int $operatorID The accountID associated with creating the shipment
-	*		@type string $dateEffective The date the shipment is made effective, must not be in the past
-	*		@type string $changeReason The string change reason for an shipment being changed
-	* }
-	*
-	* @return array POST response from API
-	*
-	*/
-	public function buildShipment($options){
-
-		$buildOptions = array(
-			"data" => $options,
-			"type" => 'shipment'
-		);
-
-		return $this->buildObject($buildOptions);
-	}
-
-
-	/**
+ 	/**
 	* 
 	* This function will create a inventory record in the MCHN via the passed parameters
 	*
@@ -389,11 +414,82 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+
 	public function buildInventory($options){
 
 		$buildOptions = array(
 			"data" => $options,
 			"type" => 'inventory'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	* 
+	* This function will create a product record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $cost cost to make the inventory
+	*		@type string $title What is the title of the product e.g. 'Gucci Face Mask'
+	*		@type string $url The URL for the product on its store page e.g. 'kn95_mask'. If nothing passed default based on title
+	*		@type string $SKU What is the SKU ( Stock Keeping Unit) for the product
+	*		@type string $GTIN What is the GTIN ( Global Trade Item Number) for the product
+	*		@type boolean $hasVariants Does the product have options? E.g. T-shirt with colors has options
+	*		@type string $optionsGroupTitle If the product has options, what are they called? E.g. 'colors' for T-shirt with colors
+	*		@type string $optionTitle If the product is an option, what is its name. E.g. 'grey' for T-shirt option
+	* 		@type array subscriptionSettings The subscription settings for the product
+	*		@type array paymentSettings The payments setting for the product See on api.mchn.io/docs
+	*		@type array shipmentSettings The shipment settings for the product See on api.mchn.io/docs
+	*		@type array	productInformationSettings	The descriptive and informative settings for the product. See on api.mchn.io/docs
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+
+	public function buildProduct($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'product'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	* 
+	* This function will create a child product record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $parentID the ID of the parent product to build a child product for
+	*		@type int $cost cost to make the inventory
+	*		@type string $title What is the title of the product e.g. 'Gucci Face Mask'
+	*		@type string $url The URL for the product on its store page e.g. 'kn95_mask'. If nothing passed default based on title
+	*		@type string $SKU What is the SKU ( Stock Keeping Unit) for the product
+	*		@type string $GTIN What is the GTIN ( Global Trade Item Number) for the product
+	*		@type boolean $hasVariants Does the product have options? E.g. T-shirt with colors has options
+	*		@type string $optionsGroupTitle If the product has options, what are they called? E.g. 'colors' for T-shirt with colors
+	*		@type string $optionTitle If the product is an option, what is its name. E.g. 'grey' for T-shirt option
+	* 		@type array subscriptionSettings The subscription settings for the product
+	*		@type array paymentSettings The payments setting for the product See on api.mchn.io/docs
+	*		@type array shipmentSettings The shipment settings for the product See on api.mchn.io/docs
+	*		@type array	productInformationSettings	The descriptive and informative settings for the product. See on api.mchn.io/docs
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+
+	public function buildChildProduct($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'product',
+			"parentID" => $options['parentID']
 		);
 
 		return $this->buildObject($buildOptions);
@@ -419,11 +515,51 @@ class CommerceClient
 	* @return array POST response from API
 	*
 	*/
+
 	public function buildPayment($options){
 
 		$buildOptions = array(
 			"data" => $options,
 			"type" => 'payment'
+		);
+
+		return $this->buildObject($buildOptions);
+	}
+
+	/**
+	* 
+	* This function will create a payment record in the MCHN via the passed parameters
+	*
+	* @param array $options {
+	*
+	*		@type int $bundleGroupID The ID of the initial order in the bundle
+	*		@type string $bundleData A JSON array holding data regarding the bundle. Primarily used for adding historical data or offline orders
+	* 		@type string $dateBundled What date was the shipment bundled in a batch, if not bundled leave empty or pass null
+	* 		@type string $dateDelivered What date was the shipment delivered, if not delivered leave empty or pass null
+	* 		@type string $dateOffloaded What date was the shipment offloaded, if not offloaded leave empty or pass null
+	* 		@type string $dateSent What date was the shipment sent for delivery, if not sent leave empty or pass null
+	*		@type int $productID The ID of the product which is in the shipment 	
+	*		@type int $packagingCost What was the cost for packaging the shipment
+	*		@type string $packagingCostCurrencyCountryCode What was the country for the packaging cost currency code
+	*		@type string $serviceCode The Service Code for the shippingMethod provider
+	*		@type int $shippingCost What was the cost for shipment
+	*		@type string $shippingCurrencyCountryCode What was the country for the shipping cost currency code
+	*		@type string $shippingData Additional data about the shipment e.g. error message returned from shipping provider
+	*		@type string $shippingAddressID The address where the order is shipping, it must belong to the user who made the order
+	*		@type string $shippingMethod  The shipping method for the shipment. Must be one of the following ['LETTERMAIL','SHIPSTATION','MAGENTO','AUSTRALIAPOST']
+	*		@type int $statusID  The status of the shipment 0 => En Route, 1 => Delivered, 2 => Lost, 3 => Damaged Return, 4 => Unwanted Return, 5 => Undeliverable Return, 6 => Bundled Waiting for Label, 7 => On manifest waiting for pickup, 8 => Error during Label processing, 9 => Offlaoded to third-party for processing, 10 => Backed Out
+	*		@type int $orderID The ID of the order which is associated with the shipment
+	* }
+	*
+	* @return array POST response from API
+	*
+	*/
+
+	public function buildShipment($options){
+
+		$buildOptions = array(
+			"data" => $options,
+			"type" => 'shipment'
 		);
 
 		return $this->buildObject($buildOptions);
@@ -442,6 +578,7 @@ class CommerceClient
 	* @return array DELETE response from API
 	*
 	*/
+
 	public function deletePrice($options){
 
 		// If options passed in as number or ID only, convert it.
@@ -471,6 +608,7 @@ class CommerceClient
 	* @return array DELETE response from API
 	*
 	*/
+
 	public function deleteShippingPrice($options){
 
 		// If options passed in as number or ID only, convert it.
@@ -500,6 +638,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getAccount($options){
 
 		// If options passed in as number or ID only, convert it.
@@ -544,6 +683,62 @@ class CommerceClient
 
 	/**
 	*
+	* This function will grab a address from the MCHN based on the ID provided
+	*
+	* @param array $options {
+	*
+	*		@type int $ID The ID of the address  to get 
+	* }
+	*
+	* @return array response from API Provider
+	*
+	*/
+
+	public function getAddress($options){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$options['type'] = 'address';
+
+		return $this->getObject($options);
+	}
+
+	/**
+	*
+	* This function will grab addresses from the MCHN depending on the passed options 
+	*
+	* @param array $options {
+	*
+	*		@type int $limit The number of records to return 
+	*		@type int $offset Where to get records from with offset pagination
+	* }
+	*
+	* @return array response from API Provider
+	*
+	*/
+
+	public function getAddresses($options = []){
+
+		// If options passed in as number or ID only, convert it.
+		if(!is_array($options)){
+			$id = $options;
+			$options = array();
+			$options['id'] = $id;
+		}
+
+		$options['type'] = 'addresses';
+
+		return $this->getObjects($options);
+	}
+
+
+	/**
+	*
 	* This function will grab a article  from the MCHN based on the ID provided
 	*
 	* @param array $options {
@@ -554,6 +749,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getArticle($options){
 
 		// If options passed in as number or ID only, convert it.
@@ -610,6 +806,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getArticleCategory($options){
 
 		// If options passed in as number or ID only, convert it.
@@ -742,6 +939,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getInventories($options = []){
 
 		$options['type'] = 'inventories';
@@ -804,7 +1002,6 @@ class CommerceClient
 		return $this->getObject($options);
 	}
 
-
 	/**
 	*
 	* This function will grab an orders payments from the MCHN depending on the passed options 
@@ -849,6 +1046,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getOrderPayments($options = []){
 
 		$options['type'] = 'orderPayments';
@@ -871,6 +1069,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getOrderShipments($options = []){
  
 		// If options passed in as number or ID only, convert it.
@@ -901,6 +1100,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getOrderStatusesByOrderID($options = []){
 
 		// If options passed in as number or ID only, convert it.
@@ -930,6 +1130,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getOrderStatuses($options = []){
 
 		$options['type'] = 'orderStatuses';
@@ -992,6 +1193,7 @@ class CommerceClient
 
 		return $this->getObjects($options);
 	}
+
 	/**
 	*
 	* This function will grab all voiding payments from a payment from the MCHN depending on the passed options 
@@ -1050,6 +1252,7 @@ class CommerceClient
 	* @return array response from API Provider
 	*
 	*/
+
 	public function getProduct($options){
 
 		// If options passed in as number or ID only, convert it.
@@ -1079,7 +1282,6 @@ class CommerceClient
 
 		return $this->getObjects($options);
 	}
-
 
 	/**
 	*
@@ -1135,7 +1337,6 @@ class CommerceClient
 		return $this->getObjects($options);
 	}
 
-
 	/**
 	*
 	* This function will grab product categories from the MCHN depending on the passed options 
@@ -1167,7 +1368,6 @@ class CommerceClient
 		$options['getType'] = 'productCategories';
 		return $this->getObjects($options);
 	}
-
 	
 	/**
 	*
@@ -1507,12 +1707,17 @@ class CommerceClient
 		}
 
 		// Build API request information
-
 		$requestURI = "";
 
 		// Append appropriate request URI based on type.
 		switch($options['type']){
 
+			case "account":
+				$requestURI .= "accounts";
+				break;
+			case "address":
+				$requestURI .= "addresses";
+				break;
 			case "article":
 				$requestURI .= "articles";
 				break;

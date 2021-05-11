@@ -89,7 +89,6 @@ class ApiProvider
 
     /**
 	 * Boolean value determining whether the API response has a previous page in response
-	 * Currently commented out until data integrity issue in cursor pagination is sorted.
 	 * @var bool
     */
 
@@ -353,25 +352,6 @@ class ApiProvider
         
         curl_setopt_array($curl, $curlOptions);
         
-        // array(
-        // // Make sure requestURI has version
-        // CURLOPT_URL => $curlURL,
-        // CURLOPT_RETURNTRANSFER => true,
-        // CURLOPT_ENCODING => "",
-        // CURLOPT_MAXREDIRS => 20,
-        // CURLOPT_TIMEOUT => 0,
-        // CURLOPT_FOLLOWLOCATION => true,
-        // CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        // CURLOPT_CUSTOMREQUEST => $requestType,
-        // CURLOPT_HTTPHEADER => array(
-        //     "Cookie: PHPSESSID=c7bpjshgpp3oaaurpekqiitr83",
-        //     "x-api-key: " . $this->sharedKey,
-        //     "hash: " . $requestHash
-        // ),
-        // CURLOPT_POSTFIELDS => json_encode($options['data']),
-        // ));
-
-    
         $response = curl_exec($curl);
         $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
@@ -381,8 +361,7 @@ class ApiProvider
 
         curl_close($curl);
 
-        // var_dump($response);
-        // print_r($response);
+        $raw = $response;
 
         $response = json_decode($response, true);
 
@@ -398,9 +377,12 @@ class ApiProvider
                 $invalidResponse = true;
             break;
             case JSON_ERROR_SYNTAX:
+
+                var_dump($raw);
+                // var_dump($response);
+
                 echo 'API RESPONSE ERROR - Syntax error, malformed JSON on endpoint ' . $curlURL . "\n";
-               
-               var_dump($options['input']);
+
                 $invalidResponse = true;
             break;
             case JSON_ERROR_NONE:
@@ -454,16 +436,5 @@ class ApiProvider
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 ?>
